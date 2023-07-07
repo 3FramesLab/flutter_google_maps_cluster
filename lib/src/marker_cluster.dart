@@ -7,7 +7,6 @@ import 'cluster.dart';
 import 'clusterable.dart';
 import 'point_cluster.dart';
 
-/// The List to be clustered must contain objects that conform to Clusterable.
 class MarkerCluster<T extends Clusterable> {
   final int minZoom;
   final int maxZoom;
@@ -130,8 +129,7 @@ class MarkerCluster<T extends Clusterable> {
     return children;
   }
 
-  /// Returns a list of standalone points (not clusters) that are children of
-  /// the given cluster.
+  /// Returns a list of standalone points (not clusters) that are children
   List<T> points(int clusterId) {
     var points = <T>[];
 
