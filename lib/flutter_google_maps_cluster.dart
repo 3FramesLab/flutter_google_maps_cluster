@@ -8,4 +8,3 @@ export 'src/grid_cell.dart';
 export 'src/grid_manager.dart';
 export 'src/map_marker.dart';
 export 'src/quad_tree.dart';
-export 'src/point_cluster.dart';
