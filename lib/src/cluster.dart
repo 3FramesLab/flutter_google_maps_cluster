@@ -1,13 +1,12 @@
 import 'base_cluster.dart';
 
-class PointCluster extends BaseCluster {
-  PointCluster({
+class Cluster extends BaseCluster {
+  Cluster({
     double? x,
     double? y,
     int? id,
     int? pointsSize,
     String? childMarkerId,
-    int? zoom,
   }) {
     this.x = x;
     this.y = y;
@@ -16,7 +15,7 @@ class PointCluster extends BaseCluster {
     this.childMarkerId = childMarkerId;
 
     isCluster = true;
-    zoom = zoom;
+    zoom = 24; // Max value.
     parentId = -1;
   }
 }

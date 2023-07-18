@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter_google_maps_cluster/src/point_cluster.dart';
 import 'package:flutter_google_maps_cluster/src/quad_tree.dart';
 
 import 'base_cluster.dart';
@@ -159,7 +160,7 @@ class MarkerCluster<T extends Clusterable> {
     var y = _latY(feature.latitude!);
 
     return PointCluster(
-        x: x, y: y, zoom: 24, id: id, childMarkerId: feature.markerId);
+        x: x, y: y, zoom: 24, index: id, markerId: feature.markerId);
   }
 
   List<BaseCluster> _buildClusters(List<BaseCluster> points, int zoom) {
@@ -218,7 +219,7 @@ class MarkerCluster<T extends Clusterable> {
         clusters.add(p);
       } else {
         p.parentId = id;
-        clusters.add(PointCluster(
+        clusters.add(Cluster(
             x: wx / pointsSize,
             y: wy / pointsSize,
             id: id,
