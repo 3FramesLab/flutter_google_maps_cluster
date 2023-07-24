@@ -147,7 +147,7 @@ class MarkerCluster<T extends Clusterable> {
     } else {
       for (var child in childList) {
         if (child.isCluster!) {
-          _extractClusterPoints(child.clusterId, points);
+          _extractClusterPoints(int.tryParse(child.markerId ?? ''), points);
         } else {
           points.add(child);
         }
