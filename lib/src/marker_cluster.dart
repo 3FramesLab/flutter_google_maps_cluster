@@ -1,25 +1,23 @@
 import 'dart:math' as math;
 
+import 'package:flutter_google_maps_cluster/flutter_google_maps_cluster.dart';
 import 'package:flutter_google_maps_cluster/src/point_cluster.dart';
-import 'package:flutter_google_maps_cluster/src/quad_tree.dart';
-
-import 'base_cluster.dart';
-import 'cluster.dart';
-import 'clusterable.dart';
 
 class MarkerCluster<T extends Clusterable> {
   final int minZoom;
   final int maxZoom;
-  final int radius;
+  final int _radius = 150;
 
   /// Adjust the extent by powers of 2 (e.g. 512. 1024, ... max 8192) to get the
   /// desired distance between markers where they start to cluster.
-  final int extent;
+  final int _extent = 2048;
 
   /// The size of the Quad-tree leaf node, which affects performance.
-  final int nodeSize;
+  final int _nodeSize = 64;
 
   final List<T> _points;
+
+  final int clusterDensity;
 
   /// Store the clusters for each zoom level.
   final List<QuadTree?> _trees;
@@ -29,9 +27,7 @@ class MarkerCluster<T extends Clusterable> {
   MarkerCluster({
     required this.minZoom,
     required this.maxZoom,
-    required this.radius,
-    required this.extent,
-    required this.nodeSize,
+    required this.clusterDensity,
     points,
     createCluster,
   })  : _points = points,
@@ -49,13 +45,12 @@ class MarkerCluster<T extends Clusterable> {
 
     _trees[maxZoom + 1] = QuadTree(
       points: clusters,
-      nodeSize: nodeSize,
+      nodeSize: _nodeSize,
     );
 
     for (var z = maxZoom; z >= minZoom; z--) {
       clusters = _buildClusters(clusters, z);
-
-      _trees[z] = QuadTree(points: clusters, nodeSize: nodeSize);
+      _trees[z] = QuadTree(points: clusters, nodeSize: _nodeSize);
     }
   }
 
@@ -87,10 +82,17 @@ class MarkerCluster<T extends Clusterable> {
 
     for (var id in ids) {
       var c = tree.points[id!];
-
-      result.add((c.pointsSize != null && c.pointsSize! > 0)
-          ? _createCluster!(c, _xLng(c.x!), _yLat(c.y!))
-          : _points[c.index!]);
+      if (c.pointsSize != null && c.pointsSize! > 0) {
+        if (c.pointsSize == 1) {
+          result.add(c as T);
+        } else if (c.pointsSize! > clusterDensity - 1) {
+          result.add(_createCluster!(c, _xLng(c.x!), _yLat(c.y!)));
+        } else {
+          result.addAll(points(c.id!));
+        }
+      } else {
+        result.add(_points[c.index!]);
+      }
     }
 
     return result;
@@ -112,7 +114,7 @@ class MarkerCluster<T extends Clusterable> {
 
     var origin = index.points[originId];
 
-    var r = radius / (extent * math.pow(2, originZoom - 1));
+    var r = _radius / (_extent * math.pow(2, originZoom - 1));
     List<int?> ids = index.within(origin.x ?? 0.0, origin.y ?? 0.0, r);
 
     var children = <T>[];
@@ -165,7 +167,7 @@ class MarkerCluster<T extends Clusterable> {
 
   List<BaseCluster> _buildClusters(List<BaseCluster> points, int zoom) {
     var clusters = <BaseCluster>[];
-    var r = radius / (extent * math.pow(2, zoom));
+    var r = _radius / (_extent * math.pow(2, zoom));
 
     for (var i = 0; i < points.length; i++) {
       var p = points[i];

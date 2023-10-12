@@ -51,9 +51,7 @@ class _ClusteredMapViewState extends State<ClusteredMapView> {
     markerCluster = MarkerCluster<MapMarker>(
       minZoom: 0,
       maxZoom: 18,
-      radius: 150,
-      extent: 2048,
-      nodeSize: 64,
+      clusterDensity: 10,
       points: mapMarkers,
       createCluster: (BaseCluster? cluster, double? lng, double? lat) {
         lat ??= 0.0;
