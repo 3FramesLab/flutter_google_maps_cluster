@@ -219,7 +219,7 @@ class MarkerCluster<T extends Clusterable> {
 
       if (pointsSize == 1) {
         clusters.add(p);
-      } else {
+      } else if (pointsSize > 1) {
         p.parentId = id;
         clusters.add(Cluster(
             x: wx / pointsSize,
