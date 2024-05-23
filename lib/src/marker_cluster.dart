@@ -90,11 +90,9 @@ class MarkerCluster<T extends Clusterable> {
         } else {
           result.addAll(points(c.id!));
         }
+      } else {
+        result.add(_points[c.index!]);
       }
-      //To Check some cases.. if it is not just roll back
-      // else {
-      //   result.add(_points[c.index!]);
-      // }
     }
 
     return result;
