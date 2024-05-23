@@ -86,7 +86,7 @@ class MarkerCluster<T extends Clusterable> {
         if (c.pointsSize == 1) {
           result.add(c as T);
         } else if (c.pointsSize! > clusterDensity - 1) {
-          result.add(_createCluster!(c, _xLng(c.x!), _yLat(c.y!)));
+          result.add(_createCluster!(c, c.x!, c.y!));
         } else {
           result.addAll(points(c.id!));
         }
