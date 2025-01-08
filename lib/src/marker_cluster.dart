@@ -10,7 +10,7 @@ class MarkerCluster<T extends Clusterable> {
 
   /// Adjust the extent by powers of 2 (e.g. 512. 1024, ... max 8192) to get the
   /// desired distance between markers where they start to cluster.
-  final int _extent = 2048;
+  final int _extent = 1024;
 
   /// The size of the Quad-tree leaf node, which affects performance.
   final int _nodeSize = 64;
