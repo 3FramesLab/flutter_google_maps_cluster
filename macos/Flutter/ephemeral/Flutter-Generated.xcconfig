@@ -1,10 +1,10 @@
 // This is a generated file; do not edit or check into version control.
-FLUTTER_ROOT=/Users/nagaraju/Documents/FlutterSDK/flutter
-FLUTTER_APPLICATION_PATH=/Users/nagaraju/Documents/3Frames/GIT/plugins/flutter_google_maps_cluster
+FLUTTER_ROOT=/Users/smeet/Smeet/FlutterSDK/flutter
+FLUTTER_APPLICATION_PATH=/Users/smeet/Smeet/3frameslab/FlutterProjects/flutter_google_maps_cluster
 COCOAPODS_PARALLEL_CODE_SIGN=true
 FLUTTER_BUILD_DIR=build
-FLUTTER_BUILD_NAME=0.0.1
-FLUTTER_BUILD_NUMBER=0.0.1
+FLUTTER_BUILD_NAME=0.0.6
+FLUTTER_BUILD_NUMBER=0.0.6
 DART_OBFUSCATION=false
 TRACK_WIDGET_CREATION=true
 TREE_SHAKE_ICONS=false
