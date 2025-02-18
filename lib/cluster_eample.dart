@@ -6,6 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_google_maps_cluster/flutter_google_maps_cluster.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+main() {
+  runApp(ClusteredMapView());
+}
+
 class ClusteredMapView extends StatefulWidget {
   const ClusteredMapView({Key? key}) : super(key: key);
   @override
@@ -15,8 +19,8 @@ class ClusteredMapView extends StatefulWidget {
 class _ClusteredMapViewState extends State<ClusteredMapView> {
   final List<MapMarker> markers = [];
   final LatLngBounds initialBounds = LatLngBounds(
-    southwest: LatLng(37.0902, -95.7129),
-    northeast: LatLng(39.5501, -90.0001),
+    southwest: const LatLng(37.0902, -95.7129),
+    northeast: const LatLng(39.5501, -90.0001),
   );
   late GoogleMapController mapController;
   late MarkerCluster<MapMarker> markerCluster;
@@ -68,6 +72,10 @@ class _ClusteredMapViewState extends State<ClusteredMapView> {
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
         );
       },
+      options: MarkerClusterOptions(
+        maxDistance: 120,
+        animationDuration: Duration(milliseconds: 300),
+      ),
     );
 
     updateMarkerDensity(markers);
@@ -159,21 +167,23 @@ class _ClusteredMapViewState extends State<ClusteredMapView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Clustered Map View'),
-      ),
-      body: GoogleMap(
-        onMapCreated: _onMapCreated,
-        markers: clusterMarkers.union(individualMarkers),
-        initialCameraPosition: CameraPosition(
-          target: LatLng(37.0902, -95.7129),
-          zoom: 6,
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Clustered Map View'),
         ),
-        onCameraMove: (position) {
-          applyClustering(position.zoom);
-        },
-        onTap: (latlng) {},
+        body: GoogleMap(
+          onMapCreated: _onMapCreated,
+          markers: clusterMarkers.union(individualMarkers),
+          initialCameraPosition: const CameraPosition(
+            target: LatLng(37.0902, -95.7129),
+            zoom: 6,
+          ),
+          onCameraMove: (position) {
+            applyClustering(position.zoom);
+          },
+          onTap: (latlng) {},
+        ),
       ),
     );
   }
@@ -240,16 +250,14 @@ class _ClusteredMapViewState extends State<ClusteredMapView> {
         position.southwest,
       );
 
-      if (zoomLevel != null) {
-        final newZoomLevel = zoomLevel + 3;
+      final newZoomLevel = zoomLevel + 3;
 
-        await mapController.animateCamera(
-          CameraUpdate.newLatLngZoom(
-            latlng,
-            newZoomLevel > 20 ? 20 : newZoomLevel,
-          ),
-        );
-      }
+      await mapController.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          latlng,
+          newZoomLevel > 20 ? 20 : newZoomLevel,
+        ),
+      );
     }
   }
 

@@ -1,7 +1,13 @@
 import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
 import 'package:flutter_google_maps_cluster/flutter_google_maps_cluster.dart';
+import 'package:flutter_google_maps_cluster/src/clustering/cluster_algorithm.dart';
+import 'package:flutter_google_maps_cluster/src/clustering/non_hierarchical_algorithm.dart';
+import 'package:flutter_google_maps_cluster/src/clustering/precaching_decorator.dart';
+import 'package:flutter_google_maps_cluster/src/custom_marker.dart';
 import 'package:flutter_google_maps_cluster/src/point_cluster.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MarkerCluster<T extends Clusterable> {
   final int minZoom;
@@ -24,15 +30,28 @@ class MarkerCluster<T extends Clusterable> {
 
   final T Function(BaseCluster?, double?, double?)? _createCluster;
 
+  final Map<String, CustomMarker> _markers = {};
+  final Map<String, Cluster> _clusters = {};
+  late ClusterAlgorithm _algorithm;
+  late MarkerClusterOptions _options;
+
   MarkerCluster({
     required this.minZoom,
     required this.maxZoom,
     required this.clusterDensity,
     points,
     createCluster,
+    required MarkerClusterOptions options,
   })  : _points = points,
         _trees = List.filled(maxZoom + 2, null),
         _createCluster = createCluster {
+    _options = options;
+    _algorithm = PrecachingDecorator(
+      NonHierarchicalDistanceBasedAlgorithm(
+        maxDistance: options.maxDistance,
+      ),
+    );
+
     var clusters = <BaseCluster>[];
 
     for (var i = 0; i < _points.length; i++) {
@@ -189,7 +208,7 @@ class MarkerCluster<T extends Clusterable> {
       var wx = (p.x ?? 0.0) * pointsSize;
       var wy = (p.y ?? 0.0) * pointsSize;
 
-      var childMarkerId;
+      String? childMarkerId;
       if (p.childMarkerId != null) {
         childMarkerId = p.childMarkerId;
       } else {
@@ -222,9 +241,13 @@ class MarkerCluster<T extends Clusterable> {
       } else if (pointsSize > 1) {
         p.parentId = id;
         clusters.add(Cluster(
-            x: wx / pointsSize,
-            y: wy / pointsSize,
             id: id,
+            position: LatLng(
+              _xLng(wx / pointsSize),
+              _yLat(wy / pointsSize),
+            ),
+            items: [],
+            options: _options,
             pointsSize: pointsSize,
             childMarkerId: childMarkerId));
       }
@@ -259,5 +282,209 @@ class MarkerCluster<T extends Clusterable> {
 
   int _limitZoom(int z) {
     return math.max(minZoom, math.min(z, maxZoom + 1));
+  }
+
+  void updateMarkers(List<CustomMarker> markers) {
+    // Clear existing markers
+    _markers.clear();
+
+    // Add new markers
+    for (final marker in markers) {
+      _markers[marker.id] = marker;
+    }
+
+    _recalculateClusters();
+  }
+
+  void _recalculateClusters() {
+    final oldClusters = Map<String, Cluster>.from(_clusters);
+    _clusters.clear();
+
+    // Get new clusters from algorithm
+    final points = _markers.values
+        .map((m) => ClusterPoint(
+              position: m.position,
+              data: m,
+            ))
+        .toList();
+
+    final newClusters = _algorithm.cluster(points);
+
+    // Create new cluster objects
+    for (final cluster in newClusters) {
+      final String clusterId = _generateClusterId(cluster.points);
+
+      _clusters[clusterId] = Cluster(
+        id: int.parse(clusterId),
+        position: cluster.center,
+        items: cluster.points.map((p) => p.data as CustomMarker).toList(),
+        options: _options,
+      );
+    }
+
+    // Animate transitions
+    _animateClusterChanges(oldClusters, _clusters);
+  }
+
+  void _animateClusterChanges(
+    Map<String, Cluster> oldClusters,
+    Map<String, Cluster> newClusters,
+  ) {
+    // Find clusters to animate
+    final appearing = <String>{};
+    final disappearing = <String>{};
+    final moving = <String>{};
+
+    for (final id in newClusters.keys) {
+      if (!oldClusters.containsKey(id)) {
+        appearing.add(id);
+      } else if (oldClusters[id]!.position != newClusters[id]!.position) {
+        moving.add(id);
+      }
+    }
+
+    for (final id in oldClusters.keys) {
+      if (!newClusters.containsKey(id)) {
+        disappearing.add(id);
+      }
+    }
+
+    // Apply animations
+    for (final id in appearing) {
+      _animateClusterAppear(newClusters[id]!);
+    }
+
+    for (final id in disappearing) {
+      _animateClusterDisappear(oldClusters[id]!);
+    }
+
+    for (final id in moving) {
+      _animateClusterMove(
+        oldClusters[id]!,
+        newClusters[id]!,
+      );
+    }
+  }
+
+  void _animateClusterAppear(Cluster cluster) {
+    // Implement appear animation
+    cluster.animateScale(
+      begin: 0.0,
+      end: 1.0,
+      duration: _options.animationDuration,
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _animateClusterDisappear(Cluster cluster) {
+    // Implement disappear animation
+    cluster.animateScale(
+      begin: 1.0,
+      end: 0.0,
+      duration: _options.animationDuration,
+      curve: Curves.easeInCubic,
+    );
+  }
+
+  void _animateClusterMove(Cluster oldCluster, Cluster newCluster) {
+    // Implement move animation
+    newCluster.animatePosition(
+      begin: oldCluster.position,
+      end: newCluster.position,
+      duration: _options.animationDuration,
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  String _generateClusterId(List<ClusterPoint> points) {
+    return points.map((p) => (p.data as CustomMarker).id).join('-');
+  }
+}
+
+// Add new options class for customization
+class MarkerClusterOptions {
+  final double maxDistance;
+  final Duration animationDuration;
+  final Widget Function(Cluster)? clusterWidgetBuilder;
+  final Widget Function(CustomMarker)? markerWidgetBuilder;
+
+  const MarkerClusterOptions({
+    this.maxDistance = 120,
+    this.animationDuration = const Duration(milliseconds: 300),
+    this.clusterWidgetBuilder,
+    this.markerWidgetBuilder,
+  });
+}
+
+// Add Cluster class
+class Cluster extends BaseCluster {
+  final LatLng position;
+  final List<CustomMarker> items;
+  final MarkerClusterOptions options;
+
+  Cluster({
+    required int id,
+    required this.position,
+    required this.items,
+    required this.options,
+    double? x,
+    double? y,
+    int? pointsSize,
+    String? childMarkerId,
+  }) : super(
+          id: id,
+          x: x,
+          y: y,
+          pointsSize: pointsSize,
+          childMarkerId: childMarkerId,
+        );
+
+  Widget build(BuildContext context) {
+    if (items.length == 1) {
+      return options.markerWidgetBuilder?.call(items.first) ??
+          _defaultMarkerWidget(items.first);
+    }
+
+    return options.clusterWidgetBuilder?.call(this) ?? _defaultClusterWidget();
+  }
+
+  Widget _defaultMarkerWidget(CustomMarker marker) {
+    // Implement default marker widget
+    return const Icon(Icons.location_pin, color: Colors.red);
+  }
+
+  Widget _defaultClusterWidget() {
+    // Implement default cluster widget
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.blue,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          items.length.toString(),
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  // Animation methods
+  void animateScale({
+    required double begin,
+    required double end,
+    required Duration duration,
+    required Curve curve,
+  }) {
+    // Implement scale animation
+  }
+
+  void animatePosition({
+    required LatLng begin,
+    required LatLng end,
+    required Duration duration,
+    required Curve curve,
+  }) {
+    // Implement position animation
   }
 }
