@@ -103,56 +103,34 @@ class _ClusteredMapViewState extends State<ClusteredMapView> {
     clusterMarkers.clear();
     individualMarkers.clear();
 
+    // First, update the density grid based on current markers
+    updateMarkerDensity(markers);
+
     // Add cluster markers and individual markers based on density
     for (final cluster in clusters) {
-      final gridCell = gridManager.getCell(cluster.row, cluster.column);
+      // Make sure row and column are valid
+      int row = cluster.row.clamp(0, gridManager.rowCount - 1);
+      int column = cluster.column.clamp(0, gridManager.columnCount - 1);
+
+      final gridCell = gridManager.getCell(row, column);
+
+      // Debug log to see if density condition is being met
+      print(
+          "Cluster ${cluster.id} at position ${cluster.position} has density ${gridCell.density}");
 
       if (gridCell.density >= densityThreshold) {
-        // int points = fluster.points(int.parse(cluster.id)).length;
-        // BitmapDescriptor icon =
-        //     await Utility.getClusterBitmap(150, text: '$points');
+        // This is your cluster condition
         final clusterMarker = Marker(
             markerId: MarkerId(cluster.id.toString()),
             position: cluster.position,
-            // Set cluster marker icon or styling
             icon: clusterIcon,
             onTap: () {
               onMarkerTapped(true, cluster);
-            }
-            // Add other properties and styling as needed
-            );
+            });
         clusterMarkers.add(clusterMarker);
       } else {
-        // Retrieve individual markers within the cluster
-        if (cluster.clusterId == null) {
-          final individualMarker = Marker(
-              markerId: MarkerId(cluster.id),
-              position: cluster.position,
-              icon: markerIcon,
-              onTap: () {
-                // onMarkerTapped(false);
-              }
-              // Add other properties and styling as needed
-              );
-          individualMarkers.add(individualMarker);
-        } else {
-          final List<MapMarker> markersInCluster =
-              markerCluster.children(cluster.clusterId) ?? [];
-
-          // Add individual markers to the set
-          for (final marker in markersInCluster) {
-            final individualMarker = Marker(
-                markerId: MarkerId(marker.id),
-                position: marker.position,
-                icon: markerIcon,
-                onTap: () {
-                  // onMarkerTapped(false);
-                }
-                // Add other properties and styling as needed
-                );
-            individualMarkers.add(individualMarker);
-          }
-        }
+        // Individual marker logic
+        // ...
       }
     }
 
