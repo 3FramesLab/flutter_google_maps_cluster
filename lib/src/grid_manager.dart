@@ -1,4 +1,4 @@
-import 'package:flutter_google_maps_cluster/src/grid_cell.dart';
+// 1. Make sure GridManager properly initializes its grid
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class GridManager {
@@ -12,11 +12,14 @@ class GridManager {
     required this.columnCount,
     required this.gridCellSize,
   }) {
-    grid = List.generate(rowCount, (row) {
-      return List.generate(columnCount, (column) {
-        return GridCell(row: row, column: column);
-      });
-    });
+    // Initialize the grid with empty cells
+    grid = List.generate(
+      rowCount,
+      (_) => List.generate(
+        columnCount,
+        (_) => GridCell(density: 0),
+      ),
+    );
   }
 
   void updateDensity(LatLng position) {
@@ -28,6 +31,15 @@ class GridManager {
   }
 
   GridCell getCell(int row, int column) {
+    // Ensure row and column are within bounds
+    row = row.clamp(0, rowCount - 1);
+    column = column.clamp(0, columnCount - 1);
     return grid[row][column];
   }
+}
+
+// 2. Add the missing GridCell class
+class GridCell {
+  double density;
+  GridCell({required this.density});
 }
